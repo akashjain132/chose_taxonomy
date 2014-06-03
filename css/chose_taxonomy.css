@@ -1,0 +1,21 @@
+.field-widget-chose-taxonomy label.option {
+  display: inline-block;
+  background: url('../images/star--gray--small.png') no-repeat scroll right center transparent;
+  width: 90%;
+}
+
+.field-widget-chose-taxonomy label.option:hover {
+  background: url('../images/star--yellow--small.png') no-repeat scroll right center transparent;
+}
+
+.field-widget-chose-taxonomy input {
+  display: none;
+}
+
+.like-taxonomy-term {
+  background: url('../images/star--yellow--small.png') no-repeat scroll right center transparent !important;
+}
+
+.field-widget-chose-taxonomy div.ajax-progress {
+  display: none;
+}

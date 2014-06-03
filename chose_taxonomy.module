@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Module used to Chose taxonomy term by ajax.
+ */
+
+module_load_include('inc', 'chose_taxonomy', 'chose_taxonomy.api');
+
+/**
+ * Implements hook_element_info().
+ */
+function chose_taxonomy_element_info() {
+
+  $types['chose_taxonomy'] = array(
+    '#input' => TRUE,
+    '#value_callback' => 'chose_taxonomy_value',
+    '#pre_render' => array('form_pre_render_conditional_form_element'),
+    '#process' => array('chose_taxonomy_element_process'),
+  );
+
+  return $types;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function chose_taxonomy_field_widget_info() {
+  return array(
+    'chose_taxonomy' => array(
+      'label' => t('Chose taxonomy'),
+      'description' => t('Widget show all taxonomy term in a list with a image so that when user click it corresponding taxonomy will get save for that user'),
+      'field types' => array('taxonomy_term_reference'),
+      'settings' => array('size' => ''),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+      'weight' => '1000',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function chose_taxonomy_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  $required = $element['#required'];
+
+  $item = $items[$delta];
+
+ // Get field name
+  $user_created_field_name = $field['field_name'];
+
+  // Get user selected vocabulary
+  $vocabulary_machine_name = $field['settings']['allowed_values'][0]['vocabulary'];
+  $taxonomy_name = get_taxonomy_term_by_vocabulary_machine_name($vocabulary_machine_name);
+
+  $element += array(
+    '#type' => 'checkboxes',
+    '#options' => $taxonomy_name,
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function chose_taxonomy_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element, $error['message']);
+}

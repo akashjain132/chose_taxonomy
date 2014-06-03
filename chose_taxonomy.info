@@ -1,0 +1,4 @@
+name = Chose Taxonomy
+description = User can select taxonomy which he can like or unlike
+core = 7.x
+package = User interface

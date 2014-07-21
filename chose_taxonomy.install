@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function admin_menu_uninstall() {
+  // Delete variables.
+  variable_del('chose_taxonomy_field_machine_name');
+  variable_del('chose_taxonomy_type_image_clicked');
+  variable_del('chose_taxonomy_type_image_unclicked');
+  variable_del('chose_taxonomy_image_option');
+}

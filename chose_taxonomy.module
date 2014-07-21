@@ -2,71 +2,138 @@
 
 /**
  * @file
- * Module used to Chose taxonomy term by ajax.
+ * Ajaxified widget of taxonomy term reference field in edit form.
  */
 
-module_load_include('inc', 'chose_taxonomy', 'chose_taxonomy.api');
+define('CHOSE_TAXONOMY','chose_taxonomy');
+define('CHOSE_TAXONOMY_CONFIGURATION_LINK','admin/config/user-interface/chose-taxonomy');
+
+$chose_taxonomy_path = drupal_get_path('module', CHOSE_TAXONOMY);
+require_once DRUPAL_ROOT . "/$chose_taxonomy_path/chose_taxonomy.api.inc";
 
 /**
- * Implements hook_element_info().
+ * Implements hook_permission().
  */
-function chose_taxonomy_element_info() {
+function chose_taxonomy_tracking_permission() {
 
-  $types['chose_taxonomy'] = array(
-    '#input' => TRUE,
-    '#value_callback' => 'chose_taxonomy_value',
-    '#pre_render' => array('form_pre_render_conditional_form_element'),
-    '#process' => array('chose_taxonomy_element_process'),
-  );
-
-  return $types;
-}
-
-/**
- * Implements hook_field_widget_info().
- */
-function chose_taxonomy_field_widget_info() {
   return array(
-    'chose_taxonomy' => array(
-      'label' => t('Chose taxonomy'),
-      'description' => t('Widget show all taxonomy term in a list with a image so that when user click it corresponding taxonomy will get save for that user'),
-      'field types' => array('taxonomy_term_reference'),
-      'settings' => array('size' => ''),
-      'behaviors' => array(
-        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
-      ),
-      'weight' => '1000',
+    'Chose Taxonomy Configuration' => array(
+      'title' => t('Chose Taxonomy Configuration'),
+      'description' => t('Warning: Give to trusted roles only; this permission has security implications.'),
     ),
   );
+
 }
 
 /**
- * Implements hook_field_widget_form().
+ * Implements hook_menu.
  */
-function chose_taxonomy_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+function chose_taxonomy_menu() {
 
-  $required = $element['#required'];
-
-  $item = $items[$delta];
-
- // Get field name
-  $user_created_field_name = $field['field_name'];
-
-  // Get user selected vocabulary
-  $vocabulary_machine_name = $field['settings']['allowed_values'][0]['vocabulary'];
-  $taxonomy_name = get_taxonomy_term_by_vocabulary_machine_name($vocabulary_machine_name);
-
-  $element += array(
-    '#type' => 'checkboxes',
-    '#options' => $taxonomy_name,
+  $items[CHOSE_TAXONOMY_CONFIGURATION_LINK] = array(
+    'title' => 'Chose Taxonomy',
+    'description' => 'Will make taxonomy term field ajaxified in edit form.',
+    'page callback' => 'drupal_get_form',
+    'file' => 'chose_taxonomy.admin.inc',
+    'page arguments' => array('chose_taxonomy_configuration_page'),
+    'access arguments' => array('Chose Taxonomy Configuration'),
   );
 
-  return $element;
+  return $items;
+}
+
+/*
+ * Implements hook_form_FORM_ID_alter.
+ */
+function chose_taxonomy_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+
+  if ($form['#field']['type'] == 'taxonomy_term_reference') {
+    $required_field_weight = $form['instance']['required']['#weight'];
+    $form['instance']['chose_taxonomy'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Chose taxonomy'),
+      '#description' => t('Check if you want this element ajaxified in edit form with icon such that user like or unlike something'),
+      '#weight' => $required_field_weight + 1,
+    );
+   $form['#submit'][] = 'chose_taxonomy_save_field_name';
+  }
+
+  $chose_taxonomy_config_field_name = variable_get(CHOSE_TAXONOMY . '_field_machine_name', '');
 }
 
 /**
- * Implements hook_field_widget_error().
+ * Implements hook_form_alter.
  */
-function chose_taxonomy_field_widget_error($element, $error, $form, &$form_state) {
-  form_error($element, $error['message']);
+function chose_taxonomy_form_alter(&$form, &$form_state, $form_id) {
+  // Get all field machine name
+  $chose_taxonomy_config_field_name = variable_get(CHOSE_TAXONOMY . '_field_machine_name', '');
+  $chose_taxonomy_config_field_name = trim($chose_taxonomy_config_field_name);
+  $chose_taxonomy_config_field_name = explode(",", $chose_taxonomy_config_field_name);
+  $chose_taxonomy_field_name = array();
+
+  // check variable have any field name or not.
+  if (empty($chose_taxonomy_config_field_name)) {
+    return;
+  }
+
+  foreach ($chose_taxonomy_config_field_name as $key => $field_name) {
+    if (isset($form[$field_name])) {
+      $chose_taxonomy_field_name[] = $field_name;
+    }
+  }
+
+  // if user have not created any entity then chose taxonomy is not work.
+  if ((isset($form['#user']->uid) && empty($form['#user']->uid)) || (isset($form['#node']->nid) && empty($form['#node']->nid))) {
+    return;
+  }
+
+  $chose_taxonomy_path = drupal_get_path('module', CHOSE_TAXONOMY);
+  drupal_add_js($chose_taxonomy_path . '/js/chose_taxonomy.js', 'file');
+  drupal_add_css($chose_taxonomy_path . '/css/chose_taxonomy.css', 'file');
+
+  $form_state['storage']['chose_taxonomy'] = $chose_taxonomy_field_name;
+  foreach ($chose_taxonomy_field_name as $key => $field_machine_name) {
+
+    // if form has no chosen taxonomy field.
+    if (!isset($form[$field_machine_name])) {
+      return;
+    }
+
+    $form[$field_machine_name]['#attributes'] = array('class' => array('field-widget-chose-taxonomy'));
+    $form[$field_machine_name]['und']['#ajax'] = array(
+      'callback' => 'chose_taxonomy_save_taxonomy_term_by_ajax',
+      'method' => 'replace',
+      'effect' => 'fade',
+    );
+
+  }
+
+  $clicked_image   = variable_get(CHOSE_TAXONOMY . '_type_image_clicked', '');
+  $unclicked_image = variable_get(CHOSE_TAXONOMY . '_type_image_unclicked', '');
+
+  $clicked_image   = file_load($clicked_image);
+  $unclicked_image = file_load($unclicked_image);
+
+  // If user select its custom icon then show that icons otherwise default icon will be seen.
+  if (!(empty($clicked_image->uri) || empty($unclicked_image))) {
+    $clicked_image   = $clicked_image->uri;
+    $clicked_image   = file_create_url($clicked_image);
+    $clicked_image   = parse_url($clicked_image);
+    $clicked_image   = trim($clicked_image['path'],'/');
+    $unclicked_image = $unclicked_image->uri;
+    $unclicked_image = file_create_url($unclicked_image);
+    $unclicked_image = parse_url($unclicked_image);
+    $unclicked_image = trim($unclicked_image['path'],'/');
+  }
+  else {
+    $default_image   = variable_get(CHOSE_TAXONOMY . '_image_option', '');
+    $default_image  .= ".png";
+    $clicked_image   = "positive-" . $default_image;
+    $unclicked_image = "negative-" . $default_image;
+    $clicked_image   = $chose_taxonomy_path . '/images/' . $clicked_image;
+    $unclicked_image = $chose_taxonomy_path . '/images/' . $unclicked_image;
+  }
+
+  // Pass image name in javascript variable
+  drupal_add_js(array(CHOSE_TAXONOMY => array('cliked_image' => $clicked_image, 'uncliked_image' => $unclicked_image)), array('type' => 'setting'));
 }

@@ -6,47 +6,68 @@
  */
 
 /**
- * Get all taxonomy term name with its tid by vocabulary machine name.
- *
- * @param  String $vocabulary_machine_name
- *   Vocabulary machine name.
- * @return Array
- *   Return an array having all taxonomy id as its value and term name as its value.
+ * Save taxonomy term id in entity field.
  */
-function get_taxonomy_term_by_vocabulary_machine_name($vocabulary_machine_name) {
-  $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_machine_name);
-  $vocabulary_id = $vocabulary->vid;
-  $vocabulary_taxonomy_term = taxonomy_get_tree($vocabulary_id);
-  foreach ($vocabulary_taxonomy_term as $key => $value) {
-    $vocabulary_taxonomy_name = $vocabulary_taxonomy_term[$key]->name;
-    $vocabulary_taxonomy_id = $vocabulary_taxonomy_term[$key]->tid;
-    $taxonomy_name[$vocabulary_taxonomy_id] = $vocabulary_taxonomy_name;
+function chose_taxonomy_save_taxonomy_term($entity_type, $entity_id, $chose_taxonomy_tid, $field_name) {
+  if ($entity_type == 'node') {
+    $entity_object = node_load($entity_id);
   }
-  return $taxonomy_name;
+  if ($entity_type == 'user') {
+    $entity_object = user_load($entity_id);
+  }
+
+  foreach ($chose_taxonomy_tid as $key => $tid) {
+    $field_value['und'][]['tid'] = $tid;
+  }
+
+  $entity_object->$field_name = $field_value;
+
+  field_attach_update($entity_type, $entity_object);
 }
 
 /**
- * callback of chose_taxonomy element.
- * @param  Array $element
- *   Having information about elements.
- * @return Array
- *   Return newly created form element.
+ * Ajax callback function to get all tids.
  */
-function chose_taxonomy_element_process($element) {
+function chose_taxonomy_save_taxonomy_term_by_ajax($form, $form_state) {
+  $chose_taxonomy_terms = $form_state['storage']['chose_taxonomy'];
 
-  $field_name = $element['#field_name'];
-  $field_info = field_info_field($field_name);
-  $vocabulary_machine_name = $field_info['settings']['allowed_values'][0]['vocabulary'];
+  foreach ($chose_taxonomy_terms as $key => $field_name) {
+    if (!isset($form_state['values'][$field_name]['und'])) {
+      continue;
+    }
+    $taxonomy_terms = $form_state['values'][$field_name]['und'];
+    $chose_taxonomy_tid = array();
+    foreach ($taxonomy_terms as $key => $value) {
+      if ($value != 0) {
+        if (isset($form_state['values'][$field_name]['und'][$key]['tid'])) {
+          $chose_taxonomy_tid[] = $form_state['values'][$field_name]['und'][$key]['tid'];
+        }
+      }
+    }
 
-  $taxonomy_name = get_taxonomy_term_by_vocabulary_machine_name($vocabulary_machine_name);
+    if (isset($chose_taxonomy_tid) && !empty($chose_taxonomy_tid)) {
+      if (isset($form['#user'])) {
+        $entity_type = 'user';
+        $entity_id = $form['#user']->uid;
+      }
+      if (isset($form['#node'])) {
+        $entity_type = 'node';
+        $entity_id = $form['#node']->nid;
+      }
+      chose_taxonomy_save_taxonomy_term($entity_type, $entity_id, $chose_taxonomy_tid, $field_name);
+    }
 
-  $element['chosen_taxonomy_list'] = array(
-    '#type' => 'checkboxes',
-    '#attributes' => array('class' => array('chose-taxonomy-form'), 'id' => array('chose-taxonomy-form-element')),
-    '#prefix' => '<div id=chose_taxonomy_wrapper>',
-    '#suffix' => '</div>',
-    '#options' => $taxonomy_name,
-  );
+  }
 
-  return $element;
+}
+
+/**
+ * Save field machine name for which chosen taxonomy will be used.
+ */
+function chose_taxonomy_save_field_name($form, $form_state) {
+
+  $chose_taxonomy_config_field_name  = variable_get(CHOSE_TAXONOMY . '_field_machine_name', '');
+  $chose_taxonomy_config_field_name .=  "," . $form['#field']['field_name'];
+
+  variable_set(CHOSE_TAXONOMY . '_field_machine_name', $chose_taxonomy_config_field_name);
 }

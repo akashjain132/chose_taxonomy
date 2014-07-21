@@ -1,21 +1,22 @@
-.field-widget-chose-taxonomy label.option {
-  display: inline-block;
-  background: url('../images/star--gray--small.png') no-repeat scroll right center transparent;
-  width: 90%;
-}
-
-.field-widget-chose-taxonomy label.option:hover {
-  background: url('../images/star--yellow--small.png') no-repeat scroll right center transparent;
+.field-widget-chose-taxonomy div.ajax-progress {
+  display: none;
 }
 
 .field-widget-chose-taxonomy input {
   display: none;
 }
 
-.like-taxonomy-term {
-  background: url('../images/star--yellow--small.png') no-repeat scroll right center transparent !important;
+.field-widget-chose-taxonomy .form-type-checkbox label.option {
+  display: inline-block;
+  width: 90%;
+  padding-right: 2%;
+}
+/*
+.unlike-taxonomy-term, .like-taxonomy-term:hover {
+  background: url('../images/negative-star.png') no-repeat scroll right center transparent;
 }
 
-.field-widget-chose-taxonomy div.ajax-progress {
-  display: none;
+.like-taxonomy-term, .unlike-taxonomy-term:hover {
+  background: url('../images/positive-star.png') no-repeat scroll right center transparent;
 }
+*/

@@ -8,9 +8,6 @@
 define('CHOSE_TAXONOMY','chose_taxonomy');
 define('CHOSE_TAXONOMY_CONFIGURATION_LINK','admin/config/user-interface/chose-taxonomy');
 
-$chose_taxonomy_path = drupal_get_path('module', CHOSE_TAXONOMY);
-require_once DRUPAL_ROOT . "/$chose_taxonomy_path/chose_taxonomy.api.inc";
-
 /**
  * Implements hook_permission().
  */
@@ -48,13 +45,20 @@ function chose_taxonomy_menu() {
 function chose_taxonomy_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
 
   if ($form['#field']['type'] == 'taxonomy_term_reference') {
+
+    // Load file which include ajax callbacj definiation.
+    module_load_include('inc', 'chose_taxonomy', 'chose_taxonomy.pages');
+
     $required_field_weight = $form['instance']['required']['#weight'];
+
     $form['instance']['chose_taxonomy'] = array(
       '#type' => 'checkbox',
       '#title' => t('Chose taxonomy'),
       '#description' => t('Check if you want this element ajaxified in edit form with icon such that user like or unlike something'),
       '#weight' => $required_field_weight + 1,
     );
+
+   // Define custom submit function.
    $form['#submit'][] = 'chose_taxonomy_save_field_name';
   }
 
@@ -99,7 +103,11 @@ function chose_taxonomy_form_alter(&$form, &$form_state, $form_id) {
       return;
     }
 
+    // Load file which include ajax callbacj definiation.
+    module_load_include('inc', 'chose_taxonomy', 'chose_taxonomy.pages');
+
     $form[$field_machine_name]['#attributes'] = array('class' => array('field-widget-chose-taxonomy'));
+
     $form[$field_machine_name]['und']['#ajax'] = array(
       'callback' => 'chose_taxonomy_save_taxonomy_term_by_ajax',
       'method' => 'replace',

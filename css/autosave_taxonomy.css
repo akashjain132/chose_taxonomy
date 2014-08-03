@@ -1,0 +1,13 @@
+.field-widget-autosave-taxonomy div.ajax-progress {
+  display: none;
+}
+
+.field-widget-autosave-taxonomy input {
+  display: none;
+}
+
+.field-widget-autosave-taxonomy .form-type-checkbox label.option {
+  display: inline-block;
+  width: 90%;
+  padding-right: 2%;
+}

@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall functions for set some default value.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function autosave_taxonomy_install() {
+  variable_set(AUTOSAVE_TAXONOMY . '_image_option', 'star');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function autosave_taxonomy_uninstall() {
+  // Delete variables.
+  variable_del('autosave_taxonomy_field_machine_name');
+  variable_del('autosave_taxonomy_type_image_clicked');
+  variable_del('autosave_taxonomy_type_image_unclicked');
+  variable_del('autosave_taxonomy_image_option');
+}

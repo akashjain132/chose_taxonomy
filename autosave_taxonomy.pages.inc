@@ -66,11 +66,13 @@ function autosave_taxonomy_save_taxonomy_term_by_ajax($form, $form_state) {
  */
 function autosave_taxonomy_save_field_name($form, $form_state) {
 
-
   if (isset($form_state['values']['instance']['autosave_taxonomy']) && isset($form_state['values']['instance']['field_name'])) {
     $autosave_taxonomy_field_name = $form_state['values']['instance']['field_name'];
     $autosave_taxonomy_value = $form_state['values']['instance']['autosave_taxonomy'] == 1 ? TRUE : FALSE;
     $autosave_taxonomy_config_field_name  = variable_get(AUTOSAVE_TAXONOMY . '_field_machine_name', '');
+    if ($form_state['values']['instance']['autosave_taxonomy'] == 1 && strpos($autosave_taxonomy_config_field_name, $autosave_taxonomy_field_name) !== FALSE) {
+      return;
+    }
     if ($autosave_taxonomy_value) {
       $autosave_taxonomy_config_field_name .=  "," . $form['#field']['field_name'];
     }

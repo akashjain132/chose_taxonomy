@@ -17,8 +17,8 @@ function autosave_taxonomy_install() {
  */
 function autosave_taxonomy_uninstall() {
   // Delete variables.
-  variable_del('autosave_taxonomy_field_machine_name');
-  variable_del('autosave_taxonomy_type_image_clicked');
-  variable_del('autosave_taxonomy_type_image_unclicked');
-  variable_del('autosave_taxonomy_image_option');
+  variable_del(AUTOSAVE_TAXONOMY . '_field_machine_name');
+  variable_del(AUTOSAVE_TAXONOMY . '_type_image_clicked');
+  variable_del(AUTOSAVE_TAXONOMY . '_type_image_unclicked');
+  variable_del(AUTOSAVE_TAXONOMY . '_image_option');
 }
